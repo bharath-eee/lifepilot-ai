@@ -39,6 +39,11 @@ export const Chat: React.FC = () => {
     setInput('');
     setIsLoading(true);
 
+    const chatHistory = messages.map(m => ({
+      sender: m.sender,
+      text: m.text
+    })).slice(-10);
+
     try {
       const response = await fetch(`${API_BASE_URL}/chat`, {
         method: 'POST',
@@ -46,7 +51,10 @@ export const Chat: React.FC = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ message: currentInput })
+        body: JSON.stringify({ 
+          message: currentInput,
+          history: chatHistory
+        })
       });
 
       if (!response.ok) {

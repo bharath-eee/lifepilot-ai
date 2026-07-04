@@ -15,8 +15,15 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
+from typing import Optional, List
+
+class ChatMessage(BaseModel):
+    sender: str
+    text: str
+
 class ChatRequest(BaseModel):
     message: str
+    history: Optional[List[ChatMessage]] = None
 
 class ChatResponse(BaseModel):
     reply: str
@@ -260,7 +267,7 @@ def parse_send_email_command(user_message: str) -> Optional[dict]:
     return None
 
 
-async def get_ai_response(user_message: str, context: str, user_email: str) -> str:
+async def get_ai_response(user_message: str, context: str, user_email: str, history: Optional[List[dict]] = None) -> str:
     """Get a response from OpenRouter AI with context about the user's emails."""
     if not settings.OPENROUTER_API_KEY or settings.OPENROUTER_API_KEY == "mock-openrouter-key":
         return "AI assistant is not configured. Please add your OpenRouter API key to the .env file."
@@ -295,12 +302,17 @@ async def get_ai_response(user_message: str, context: str, user_email: str) -> s
                 "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
                 "Content-Type": "application/json"
             }
+            
+            messages = [{"role": "system", "content": system_prompt}]
+            if history:
+                for h in history:
+                    role = "assistant" if h.get("sender") == "ai" else "user"
+                    messages.append({"role": role, "content": h.get("text", "")})
+            messages.append({"role": "user", "content": user_message})
+            
             payload = {
                 "model": settings.OPENROUTER_MODEL,
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_message}
-                ],
+                "messages": messages,
                 "max_tokens": 500
             }
             
@@ -387,7 +399,11 @@ async def chat(request: ChatRequest, current_user: dict = Depends(get_current_us
                 else:
                     email_context = "Gmail read permission is missing. Tell the user to log out and sign in again, ensuring the read permission checkbox is checked."
     
-    ai_reply = await get_ai_response(user_message, email_context, user_email)
+    history_dicts = []
+    if request.history:
+        history_dicts = [{"sender": h.sender, "text": h.text} for h in request.history]
+
+    ai_reply = await get_ai_response(user_message, email_context, user_email, history_dicts)
     
     # 3. Intercept and execute action tags
     import re
