@@ -4,7 +4,7 @@ LifePilot AI is an intelligent daily manager designed to organize objectives and
 
 ---
 
-## Architecture Overview
+## Architecture Overview 
 
 1. **Frontend:** React (TypeScript) + Vite + TailwindCSS / Vanilla CSS UI.
 2. **Backend:** FastAPI (Python) + Motor (Async MongoDB Driver) + Uvicorn server.
