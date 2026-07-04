@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     PROJECT_NAME: str = "LifePilot AI"
     ENV: str = "development"
+    FRONTEND_URL: str = "http://localhost:5173"
     BACKEND_CORS_ORIGINS: Union[str, List[str]] = []
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")

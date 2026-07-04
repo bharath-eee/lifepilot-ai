@@ -166,7 +166,7 @@ async def callback(code: str, state: Optional[str] = None):
 
         # Redirect to frontend dashboard success handler
         encoded_user = urllib.parse.quote(json.dumps(token_payload))
-        frontend_url = f"http://localhost:5173/login-success?token={local_jwt}&user={encoded_user}"
+        frontend_url = f"{settings.FRONTEND_URL}/login-success?token={local_jwt}&user={encoded_user}"
         return RedirectResponse(frontend_url)
 
     except HTTPException:
