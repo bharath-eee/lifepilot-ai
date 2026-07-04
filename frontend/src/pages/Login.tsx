@@ -1,13 +1,8 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { API_BASE_URL } from '../config';
 
 export const Login: React.FC = () => {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-
   const handleGoogleLogin = () => {
     window.location.href = `${API_BASE_URL}/auth/login`;
   };
