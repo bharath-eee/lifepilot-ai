@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Receipt, Upload, Sparkles, FileText, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config';
 
 interface Bill {
   id: string;
@@ -24,7 +25,7 @@ export const BillManager: React.FC = () => {
 
   const fetchBills = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/bills', {
+      const response = await fetch(`${API_BASE_URL}/bills`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -55,7 +56,7 @@ export const BillManager: React.FC = () => {
     formData.append('file', file);
 
     try {
-      const response = await fetch('http://localhost:8000/api/v1/bills/upload', {
+      const response = await fetch(`${API_BASE_URL}/bills/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -107,7 +108,7 @@ export const BillManager: React.FC = () => {
 
   const handlePay = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/bills/${id}/pay`, {
+      const response = await fetch(`${API_BASE_URL}/bills/${id}/pay`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`

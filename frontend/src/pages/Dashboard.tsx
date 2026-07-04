@@ -12,6 +12,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config';
 
 interface Task {
   id: string;
@@ -45,7 +46,7 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const tasksRes = await fetch('http://localhost:8000/api/v1/tasks', {
+        const tasksRes = await fetch(`${API_BASE_URL}/tasks`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (tasksRes.ok) {
@@ -53,7 +54,7 @@ export const Dashboard: React.FC = () => {
           setTasks(tasksData);
         }
 
-        const billsRes = await fetch('http://localhost:8000/api/v1/bills', {
+        const billsRes = await fetch(`${API_BASE_URL}/bills`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (billsRes.ok) {
@@ -78,7 +79,7 @@ export const Dashboard: React.FC = () => {
 
   const handleToggleTask = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/tasks/${id}/toggle`, {
+      const response = await fetch(`${API_BASE_URL}/tasks/${id}/toggle`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -93,7 +94,7 @@ export const Dashboard: React.FC = () => {
 
   const handlePayBill = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/bills/${id}/pay`, {
+      const response = await fetch(`${API_BASE_URL}/bills/${id}/pay`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });

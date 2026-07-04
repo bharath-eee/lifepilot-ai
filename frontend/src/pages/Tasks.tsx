@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckSquare, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config';
 
 interface Task {
   id: string;
@@ -19,7 +20,7 @@ export const Tasks: React.FC = () => {
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/v1/tasks', {
+        const response = await fetch(`${API_BASE_URL}/tasks`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -45,7 +46,7 @@ export const Tasks: React.FC = () => {
     if (!newTitle.trim()) return;
 
     try {
-      const response = await fetch('http://localhost:8000/api/v1/tasks', {
+      const response = await fetch(`${API_BASE_URL}/tasks`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -70,7 +71,7 @@ export const Tasks: React.FC = () => {
 
   const handleToggle = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/tasks/${id}/toggle`, {
+      const response = await fetch(`${API_BASE_URL}/tasks/${id}/toggle`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -87,7 +88,7 @@ export const Tasks: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/tasks/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/tasks/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

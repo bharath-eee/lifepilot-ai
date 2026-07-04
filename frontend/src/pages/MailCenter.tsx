@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Sparkles, Filter, AlertCircle, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config';
 
 interface Email {
   id: string;
@@ -24,7 +25,7 @@ export const MailCenter: React.FC = () => {
   useEffect(() => {
     const fetchEmails = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/v1/emails', {
+        const response = await fetch(`${API_BASE_URL}/emails`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
