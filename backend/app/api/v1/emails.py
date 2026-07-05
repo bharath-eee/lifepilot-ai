@@ -275,3 +275,70 @@ async def get_emails(current_user: dict = Depends(get_current_user)):
         # If anything fails (e.g. Gmail API permission or token issues), log it and return mock fallback
         print(f"Error reading emails from Google API: {e}")
         return get_fallback_mock_emails()
+
+from pydantic import BaseModel
+class SendEmailRequest(BaseModel):
+    to: str
+    subject: str
+    body: str
+
+@router.post("/send", summary="Send an email directly")
+async def send_email(request: SendEmailRequest, current_user: dict = Depends(get_current_user)):
+    from email.mime.text import MIMEText
+    import base64
+    user_email = current_user.get("email", "")
+    db = get_database()
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+        
+    user_doc = await db.users.find_one({"email": user_email})
+    if not user_doc or "google_credentials" not in user_doc:
+        raise HTTPException(status_code=400, detail="Google account is not connected")
+        
+    db_creds = user_doc["google_credentials"]
+    
+    # Check if gmail.send permission is in scopes
+    scopes = db_creds.get("scopes", [])
+    if "https://www.googleapis.com/auth/gmail.send" not in scopes:
+        raise HTTPException(status_code=403, detail="Gmail send permission is missing. Please log out and log in again.")
+        
+    creds = Credentials(
+        token=db_creds["token"],
+        refresh_token=db_creds.get("refresh_token"),
+        token_uri=db_creds["token_uri"],
+        client_id=db_creds["client_id"],
+        client_secret=db_creds["client_secret"],
+        scopes=db_creds["scopes"]
+    )
+    
+    if creds.expired and creds.refresh_token:
+        try:
+            creds.refresh(Request())
+            await db.users.update_one(
+                {"email": user_email},
+                {"$set": {
+                    "google_credentials.token": creds.token,
+                    "google_credentials.expiry": creds.expiry.isoformat() if creds.expiry else None
+                }}
+            )
+        except Exception as e:
+            print(f"Failed to refresh token: {e}")
+            
+    service = build("gmail", "v1", credentials=creds)
+    
+    # Clean double escaped newlines in body
+    clean_body = request.body.replace("\\n", "\n").replace("\\\\n", "\n")
+    
+    message = MIMEText(clean_body)
+    message["to"] = request.to
+    message["from"] = user_email
+    message["subject"] = request.subject
+    
+    raw = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8")
+    
+    try:
+        sent = service.users().messages().send(userId="me", body={"raw": raw}).execute()
+        return {"success": True, "message_id": sent.get("id")}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)}")
+

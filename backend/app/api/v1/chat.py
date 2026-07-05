@@ -244,7 +244,7 @@ def parse_send_email_command(user_message: str) -> Optional[dict]:
     pattern1 = r'send\s+(?:mail|email)\s+(.+?)\s+to\s+([\w\.\+\-]+@[\w\.\-]+\.\w+)'
     match1 = re.search(pattern1, msg_lower)
     if match1:
-        body = match1.group(1).strip()
+        body = match1.group(1).strip().replace("\\n", "\n").replace("\\\\n", "\n")
         to_email = match1.group(2).strip()
         return {"to": to_email, "subject": "Message from LifePilot", "body": body}
     
@@ -252,7 +252,7 @@ def parse_send_email_command(user_message: str) -> Optional[dict]:
     pattern2 = r'send\s+(.+?)\s+to\s+([\w\.\+\-]+@[\w\.\-]+\.\w+)'
     match2 = re.search(pattern2, msg_lower)
     if match2:
-        body = match2.group(1).strip()
+        body = match2.group(1).strip().replace("\\n", "\n").replace("\\\\n", "\n")
         to_email = match2.group(2).strip()
         return {"to": to_email, "subject": "Message from LifePilot", "body": body}
     
@@ -261,7 +261,7 @@ def parse_send_email_command(user_message: str) -> Optional[dict]:
     match3 = re.search(pattern3, msg_lower)
     if match3:
         to_email = match3.group(1).strip()
-        body = match3.group(2).strip()
+        body = match3.group(2).strip().replace("\\n", "\n").replace("\\\\n", "\n")
         return {"to": to_email, "subject": "Message from LifePilot", "body": body}
     
     return None
@@ -426,7 +426,7 @@ async def chat(request: ChatRequest, current_user: dict = Depends(get_current_us
         if action_type == "EMAIL_SEND":
             to = params.get("to")
             subject = params.get("subject", "Message from LifePilot")
-            body = params.get("body", "")
+            body = params.get("body", "").replace("\\n", "\n").replace("\\\\n", "\n")
             
             if not to:
                 return ChatResponse(reply=f"{clean_reply}\n\n❌ Error: Recipient email address ('to') is missing in the action request.", action_taken="email_send_failed")

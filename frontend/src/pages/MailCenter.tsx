@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Sparkles, Filter, AlertCircle, ShieldAlert } from 'lucide-react';
+import { Mail, Sparkles, Filter, AlertCircle, ShieldAlert, Reply, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
 
@@ -21,6 +21,52 @@ export const MailCenter: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const { token } = useAuth();
+  
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState<string>('');
+  const [sendingReply, setSendingReply] = useState<boolean>(false);
+  const [replySuccess, setReplySuccess] = useState<string | null>(null);
+
+  const handleSendReply = async (email: Email) => {
+    if (!replyText.trim()) return;
+    setSendingReply(true);
+    setReplySuccess(null);
+    try {
+      let cleanRecipient = email.sender;
+      const match = email.sender.match(/<(.+?)>/);
+      if (match) {
+        cleanRecipient = match[1];
+      }
+
+      const response = await fetch(`${API_BASE_URL}/emails/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          to: cleanRecipient,
+          subject: `Re: ${email.subject}`,
+          body: replyText
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send reply');
+      }
+
+      setReplySuccess(email.id);
+      setReplyText('');
+      setTimeout(() => {
+        setReplyingToId(null);
+        setReplySuccess(null);
+      }, 2000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to send reply. Make sure you granted send permissions.');
+    } finally {
+      setSendingReply(false);
+    }
+  };
   
   useEffect(() => {
     const fetchEmails = async () => {
@@ -167,6 +213,64 @@ export const MailCenter: React.FC = () => {
                           </span>
                         ))}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Reply Button Footer */}
+                  <div className="pt-3 border-t border-glassBorder/40 flex justify-between items-center">
+                    <span className="text-[10px] text-slate-400 font-mono">LifePilot Assistant</span>
+                    <button 
+                      onClick={() => {
+                        if (replyingToId === email.id) {
+                          setReplyingToId(null);
+                        } else {
+                          setReplyingToId(email.id);
+                          setReplyText('');
+                          setReplySuccess(null);
+                        }
+                      }}
+                      className="text-xs font-semibold bg-neonBlue text-white hover:bg-neonBlue/90 px-3.5 py-1.5 rounded-lg flex items-center space-x-1.5 shadow-sm transition-all"
+                    >
+                      <Reply className="w-3.5 h-3.5" />
+                      <span>{replyingToId === email.id ? 'Cancel' : 'Reply'}</span>
+                    </button>
+                  </div>
+
+                  {/* Inline Reply Editor Drawer */}
+                  {replyingToId === email.id && (
+                    <div className="mt-3 pt-3 border-t border-glassBorder/40 space-y-3">
+                      {replySuccess === email.id ? (
+                        <div className="text-xs text-neonGreen font-mono bg-neonGreen/10 border border-neonGreen/20 p-2.5 rounded-lg">
+                          ✅ Reply delivered successfully!
+                        </div>
+                      ) : (
+                        <>
+                          <textarea
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            placeholder={`Reply to ${email.sender.split('<')[0].trim()}...`}
+                            rows={3}
+                            className="w-full glass-input text-xs p-3 focus:ring-1 focus:ring-neonBlue"
+                            disabled={sendingReply}
+                          />
+                          <div className="flex justify-end">
+                            <button
+                              onClick={() => handleSendReply(email)}
+                              disabled={sendingReply || !replyText.trim()}
+                              className="text-xs font-semibold bg-neonBlue text-white hover:bg-neonBlue/90 disabled:opacity-50 px-4 py-2 rounded-lg flex items-center space-x-1.5 shadow-sm transition-all"
+                            >
+                              {sendingReply ? (
+                                <span>Sending...</span>
+                              ) : (
+                                <>
+                                  <Send className="w-3 h-3" />
+                                  <span>Send Reply</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
