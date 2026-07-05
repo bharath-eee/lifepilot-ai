@@ -105,11 +105,11 @@ export const Tasks: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white flex items-center">
+        <h1 className="text-2xl font-bold text-slate-900 flex items-center">
           <CheckSquare className="w-6 h-6 mr-2 text-neonPurple" />
           AI Task Manager
         </h1>
-        <p className="text-slate-400 text-xs mt-1">Manage daily objectives compiled from emails, bills, and conversational notes.</p>
+        <p className="text-slate-600 text-xs mt-1">Manage daily objectives compiled from emails, bills, and conversational notes.</p>
       </div>
 
       <form onSubmit={handleAddTask} className="flex gap-3">
@@ -120,20 +120,20 @@ export const Tasks: React.FC = () => {
           placeholder="Add a new objective..."
           className="flex-1 glass-input py-3 px-4 text-sm"
         />
-        <button type="submit" className="px-5 bg-gradient-to-r from-neonBlue to-neonPurple text-white rounded-xl font-bold flex items-center">
+        <button type="submit" className="px-5 bg-neonBlue hover:bg-neonBlue/90 text-white rounded-xl font-bold flex items-center shadow-sm">
           <Plus className="w-4 h-4 mr-1.5" />
           Add
         </button>
       </form>
 
-      <div className="glass-panel p-6 rounded-2xl border-glassBorder space-y-4">
+      <div className="glass-panel p-6 rounded-2xl space-y-4">
         {loading ? (
           <div className="text-center py-6 text-slate-500 font-mono text-xs">Loading Tasks...</div>
         ) : tasks.length === 0 ? (
           <div className="text-center py-6 text-slate-500 font-mono text-xs">No active tasks. Get started!</div>
         ) : (
           tasks.map(task => (
-            <div key={task.id} className="flex items-center justify-between p-3.5 bg-white/[0.01] hover:bg-white/[0.03] border border-glassBorder rounded-xl transition-all">
+            <div key={task.id} className="flex items-center justify-between p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-glassBorder rounded-xl transition-all">
               <div className="flex items-center space-x-3">
                 <input 
                   type="checkbox" 
@@ -141,7 +141,7 @@ export const Tasks: React.FC = () => {
                   onChange={() => handleToggle(task.id)}
                   className="w-4 h-4 text-neonPurple bg-bgDarker border-glassBorder rounded focus:ring-neonPurple/30"
                 />
-                <span className={`text-sm font-medium ${task.completed ? 'line-through text-slate-500' : 'text-slate-200'}`}>
+                <span className={`text-sm font-medium ${task.completed ? 'line-through text-slate-400' : 'text-slate-800'}`}>
                   {task.title}
                 </span>
               </div>

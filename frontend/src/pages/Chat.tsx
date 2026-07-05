@@ -97,13 +97,13 @@ export const Chat: React.FC = () => {
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)] max-w-5xl mx-auto glass-panel rounded-3xl border-glassBorder overflow-hidden shadow-glass">
       {/* Chat header */}
-      <div className="px-6 py-4 border-b border-glassBorder bg-white/[0.02] flex items-center justify-between">
+      <div className="px-6 py-4 border-b border-glassBorder bg-slate-50 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-neonBlue/15 text-neonBlue flex items-center justify-center border border-neonBlue/30">
+          <div className="w-10 h-10 rounded-xl bg-neonBlue/10 text-neonBlue flex items-center justify-center border border-neonBlue/20">
             <Sparkles className="w-5 h-5 animate-pulse" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-white">LifePilot AI Orchestrator</h2>
+            <h2 className="text-sm font-bold text-slate-900">LifePilot AI Orchestrator</h2>
             <p className="text-xs text-slate-500 font-mono">
               {isLoading ? (
                 <span className="text-neonBlue">Processing...</span>
@@ -124,19 +124,19 @@ export const Chat: React.FC = () => {
           >
             <div className={`flex items-start space-x-3 max-w-[80%] ${msg.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                msg.sender === 'user' ? 'bg-neonPurple/20 text-neonPurple border border-neonPurple/30' : 'bg-neonBlue/20 text-neonBlue border border-neonBlue/30'
+                msg.sender === 'user' ? 'bg-neonPurple/10 text-neonPurple border border-neonPurple/20' : 'bg-neonBlue/10 text-neonBlue border border-neonBlue/20'
               }`}>
                 {msg.sender === 'user' ? <User className="w-4 h-4" /> : <MessageSquare className="w-4 h-4" />}
               </div>
               
               <div className={`p-4 rounded-2xl border ${
                 msg.sender === 'user' 
-                  ? 'bg-gradient-to-br from-neonPurple/15 to-bgDark border-neonPurple/30 text-white rounded-tr-none' 
-                  : 'bg-white/[0.03] border-glassBorder text-slate-200 rounded-tl-none'
+                  ? 'bg-neonPurple/10 border-neonPurple/20 text-slate-800 rounded-tr-none' 
+                  : 'bg-slate-50 border-glassBorder text-slate-700 rounded-tl-none'
               }`}>
-                <div className="text-sm leading-relaxed whitespace-pre-line" dangerouslySetInnerHTML={{ 
+                <div className="text-sm leading-relaxed whitespace-pre-line text-slate-800 font-medium" dangerouslySetInnerHTML={{ 
                   __html: msg.text
-                    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-950 font-bold">$1</strong>')
                     .replace(/\n/g, '<br/>')
                 }} />
                 {msg.actionTaken === 'email_sent' && (
@@ -154,10 +154,10 @@ export const Chat: React.FC = () => {
         {isLoading && (
           <div className="flex justify-start animate-fade-in">
             <div className="flex items-start space-x-3 max-w-[80%]">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-neonBlue/20 text-neonBlue border border-neonBlue/30">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-neonBlue/10 text-neonBlue border border-neonBlue/20">
                 <Loader2 className="w-4 h-4 animate-spin" />
               </div>
-              <div className="p-4 rounded-2xl border bg-white/[0.03] border-glassBorder text-slate-400 rounded-tl-none">
+              <div className="p-4 rounded-2xl border bg-slate-50 border-glassBorder text-slate-500 rounded-tl-none">
                 <div className="flex items-center space-x-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-neonBlue animate-pulse" />
                   <span className="w-1.5 h-1.5 rounded-full bg-neonBlue animate-pulse delay-150" />
@@ -173,20 +173,20 @@ export const Chat: React.FC = () => {
       </div>
 
       {/* Quick suggestions */}
-      <div className="px-6 py-3 bg-white/[0.01] border-t border-glassBorder/40 flex items-center space-x-2 overflow-x-auto whitespace-nowrap scrollbar-none">
-        <button onClick={() => setInput("Summarize today's important emails.")} className="text-xs font-medium text-slate-400 bg-white/5 border border-glassBorder py-1.5 px-3 rounded-full hover:text-neonBlue hover:border-neonBlue/30 transition-all">
+      <div className="px-6 py-3 bg-slate-50/50 border-t border-glassBorder/80 flex items-center space-x-2 overflow-x-auto whitespace-nowrap scrollbar-none">
+        <button onClick={() => setInput("Summarize today's important emails.")} className="text-xs font-medium text-slate-600 bg-slate-100 border border-glassBorder py-1.5 px-3 rounded-full hover:text-neonBlue hover:border-neonBlue/30 transition-all">
           Summarize emails
         </button>
-        <button onClick={() => setInput("Send mail hello to bharath.eee.engineer@gmail.com")} className="text-xs font-medium text-slate-400 bg-white/5 border border-glassBorder py-1.5 px-3 rounded-full hover:text-neonPurple hover:border-neonPurple/30 transition-all">
+        <button onClick={() => setInput("Send mail hello to bharath.eee.engineer@gmail.com")} className="text-xs font-medium text-slate-600 bg-slate-100 border border-glassBorder py-1.5 px-3 rounded-full hover:text-neonPurple hover:border-neonPurple/30 transition-all">
           Send test email
         </button>
-        <button onClick={() => setInput("Are there any pending bills due?")} className="text-xs font-medium text-slate-400 bg-white/5 border border-glassBorder py-1.5 px-3 rounded-full hover:text-neonGreen hover:border-neonGreen/30 transition-all">
+        <button onClick={() => setInput("Are there any pending bills due?")} className="text-xs font-medium text-slate-600 bg-slate-100 border border-glassBorder py-1.5 px-3 rounded-full hover:text-neonGreen hover:border-neonGreen/30 transition-all">
           Check pending bills
         </button>
       </div>
 
       {/* Input Form */}
-      <form onSubmit={handleSend} className="p-4 border-t border-glassBorder bg-white/[0.02] flex items-center space-x-3">
+      <form onSubmit={handleSend} className="p-4 border-t border-glassBorder bg-slate-50 flex items-center space-x-3">
         <input 
           type="text"
           value={input}
@@ -198,7 +198,7 @@ export const Chat: React.FC = () => {
         <button 
           type="submit"
           disabled={isLoading}
-          className="p-3 bg-gradient-to-r from-neonBlue to-neonPurple text-white rounded-xl shadow-neonBlue hover:opacity-90 transition-all disabled:opacity-50"
+          className="p-3 bg-neonBlue hover:bg-neonBlue/90 text-white rounded-xl shadow-sm hover:opacity-90 transition-all disabled:opacity-50"
         >
           {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         </button>

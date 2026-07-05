@@ -127,18 +127,18 @@ export const BillManager: React.FC = () => {
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white flex items-center">
+        <h1 className="text-2xl font-bold text-slate-900 flex items-center">
           <Receipt className="w-6 h-6 mr-2 text-neonGreen" />
           Bill Management & OCR Ingestion
         </h1>
-        <p className="text-slate-400 text-xs mt-1">Upload invoices or let AI retrieve billing records automatically from your Gmail.</p>
+        <p className="text-slate-600 text-xs mt-1">Upload invoices or let AI retrieve billing records automatically from your Gmail.</p>
       </div>
 
       {/* Grid */}
       <div className="grid gap-6 md:grid-cols-3">
         {/* Upload Container */}
-        <div className="glass-panel p-6 rounded-2xl border-glassBorder space-y-4 md:col-span-1">
-          <h2 className="text-sm font-bold text-white font-mono">UPLOAD INVOICE</h2>
+        <div className="glass-panel p-6 rounded-2xl space-y-4 md:col-span-1">
+          <h2 className="text-sm font-bold text-slate-900 font-mono">UPLOAD INVOICE</h2>
           
           <input 
             type="file" 
@@ -153,17 +153,17 @@ export const BillManager: React.FC = () => {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all bg-white/[0.01] ${
+            className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all bg-slate-50/50 ${
               isDragging 
                 ? 'border-neonGreen bg-neonGreen/5 shadow-neonGreen/10 animate-pulse' 
                 : 'border-glassBorder hover:border-neonGreen/40'
             }`}
           >
             <Upload className={`w-8 h-8 mb-2 transition-colors ${isDragging ? 'text-neonGreen' : 'text-slate-500'}`} />
-            <p className="text-xs text-slate-400 text-center font-medium">
+            <p className="text-xs text-slate-600 text-center font-medium">
               {isDragging ? 'Drop your invoice here!' : 'Drag & drop or click to select invoice'}
             </p>
-            <p className="text-[10px] text-slate-600 mt-1 text-center">Supports PDF, PNG, JPEG, GIF</p>
+            <p className="text-[10px] text-slate-500 mt-1 text-center">Supports PDF, PNG, JPEG, GIF</p>
           </div>
 
           {uploading && (
@@ -178,25 +178,25 @@ export const BillManager: React.FC = () => {
               <AlertCircle className="w-4 h-4 text-critical flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-bold text-critical font-mono">UPLOAD FAILURE</p>
-                <p className="text-slate-300 leading-relaxed">{uploadError}</p>
+                <p className="text-slate-700 leading-relaxed">{uploadError}</p>
               </div>
             </div>
           )}
 
           {ocrResult && (
-            <div className="bg-white/[0.02] border border-neonGreen/20 p-4 rounded-xl space-y-2">
+            <div className="bg-slate-50 border border-neonGreen/20 p-4 rounded-xl space-y-2">
               <p className="text-[10px] font-bold text-neonGreen font-mono flex items-center">
                 <Sparkles className="w-3.5 h-3.5 mr-1" />
                 OCR EXTRACTED RESULTS
               </p>
-              <p className="text-xs text-slate-300 font-mono leading-relaxed">{ocrResult}</p>
+              <p className="text-xs text-slate-700 font-mono leading-relaxed">{ocrResult}</p>
             </div>
           )}
         </div>
 
         {/* Bills list */}
-        <div className="glass-panel p-6 rounded-2xl border-glassBorder md:col-span-2 space-y-6">
-          <h2 className="text-sm font-bold text-white font-mono">BILL DATABASE & BALANCES</h2>
+        <div className="glass-panel p-6 rounded-2xl md:col-span-2 space-y-6">
+          <h2 className="text-sm font-bold text-slate-900 font-mono">BILL DATABASE & BALANCES</h2>
           <div className="space-y-4">
             {loadingBills ? (
               <div className="text-center py-10 text-slate-500 font-mono text-xs">Fetching bills from database...</div>
@@ -208,24 +208,24 @@ export const BillManager: React.FC = () => {
                   key={bill.id} 
                   className={`p-4 rounded-xl border flex justify-between items-center transition-all duration-300 ${
                     bill.status === 'Paid' 
-                      ? 'bg-white/[0.01] border-glassBorder/30 opacity-55' 
-                      : 'bg-white/[0.02] border-glassBorder hover:border-neonGreen/30'
+                      ? 'bg-slate-50/40 border-glassBorder/30 opacity-55' 
+                      : 'bg-slate-50 border-glassBorder hover:border-neonGreen/30'
                   }`}
                 >
                   <div className="flex items-start space-x-3.5">
-                    <div className="p-2.5 bg-white/5 border border-glassBorder rounded-lg text-slate-400">
+                    <div className="p-2.5 bg-slate-100 border border-glassBorder rounded-lg text-slate-500">
                       <FileText className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-white">{bill.vendor}</h3>
+                      <h3 className="text-sm font-bold text-slate-800">{bill.vendor}</h3>
                       <p className="text-xs text-slate-500 font-mono mt-0.5">{bill.invoiceNumber} &bull; Due {bill.due}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center space-x-4">
                     <div className="text-right">
-                      <p className="text-sm font-bold text-white">₹{bill.amount}</p>
-                      <span className="text-[10px] text-slate-500 font-mono bg-white/5 px-2 py-0.5 rounded-full">{bill.category}</span>
+                      <p className="text-sm font-bold text-slate-900">₹{bill.amount}</p>
+                      <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded-full">{bill.category}</span>
                     </div>
                     {bill.status === 'Paid' ? (
                       <span className="text-xs text-neonGreen bg-neonGreen/10 border border-neonGreen/20 px-3 py-1.5 rounded-xl font-bold font-mono">
@@ -234,7 +234,7 @@ export const BillManager: React.FC = () => {
                     ) : (
                       <button 
                         onClick={() => handlePay(bill.id)}
-                        className="text-xs text-white bg-neonGreen/20 hover:bg-neonGreen hover:text-black border border-neonGreen/40 px-3 py-1.5 rounded-xl font-bold transition-all"
+                        className="text-xs text-white bg-neonBlue hover:bg-neonBlue/90 px-3.5 py-2 rounded-lg font-semibold transition-all shadow-sm"
                       >
                         Pay Bill
                       </button>

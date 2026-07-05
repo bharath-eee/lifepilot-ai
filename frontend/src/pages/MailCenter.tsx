@@ -60,11 +60,11 @@ export const MailCenter: React.FC = () => {
       {/* Page Title Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center">
+          <h1 className="text-2xl font-bold text-slate-900 flex items-center">
             <Mail className="w-6 h-6 mr-2 text-neonBlue" />
             Important Mail Center
           </h1>
-          <p className="text-slate-400 text-xs mt-1">AI-powered inbox intelligence parsing critical messages first.</p>
+          <p className="text-slate-600 text-xs mt-1">AI-powered inbox intelligence parsing critical messages first.</p>
         </div>
 
         {/* AI summary banner */}
@@ -86,8 +86,8 @@ export const MailCenter: React.FC = () => {
             onClick={() => setActiveCategory(cat)}
             className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
               activeCategory === cat 
-                ? 'bg-neonBlue text-black font-bold shadow-neonBlue' 
-                : 'text-slate-400 hover:text-white bg-white/5 border border-glassBorder'
+                ? 'bg-neonBlue text-white font-bold shadow-sm' 
+                : 'text-slate-600 hover:text-slate-900 bg-slate-50 border border-glassBorder'
             }`}
           >
             {cat}
@@ -102,19 +102,19 @@ export const MailCenter: React.FC = () => {
           {loading ? (
             <div className="glass-panel p-10 rounded-2xl border-glassBorder flex flex-col items-center justify-center space-y-4 text-center py-16">
               <span className="w-10 h-10 border-4 border-neonBlue border-t-transparent rounded-full animate-spin" />
-              <p className="font-mono text-sm text-slate-400">Fetching and analyzing your Gmail inbox...</p>
+              <p className="font-mono text-sm text-slate-500">Fetching and analyzing your Gmail inbox...</p>
             </div>
           ) : error ? (
             <div className="glass-panel p-10 rounded-2xl border-critical/20 flex flex-col items-center justify-center space-y-4 text-center py-16">
               <AlertCircle className="w-12 h-12 text-critical" />
-              <h3 className="text-lg font-bold text-white">Failed to retrieve emails</h3>
-              <p className="text-slate-400 text-sm">{error}</p>
+              <h3 className="text-lg font-bold text-slate-900">Failed to retrieve emails</h3>
+              <p className="text-slate-500 text-sm">{error}</p>
             </div>
           ) : filteredEmails.length === 0 ? (
             <div className="glass-panel p-10 rounded-2xl border-glassBorder flex flex-col items-center justify-center space-y-4 text-center py-16">
               <Mail className="w-12 h-12 text-slate-500" />
-              <h3 className="text-lg font-bold text-white">No emails found</h3>
-              <p className="text-slate-400 text-sm">We couldn't find any emails matching this category.</p>
+              <h3 className="text-lg font-bold text-slate-900">No emails found</h3>
+              <p className="text-slate-500 text-sm">We couldn't find any emails matching this category.</p>
             </div>
           ) : (
             filteredEmails.map(email => (
@@ -125,15 +125,15 @@ export const MailCenter: React.FC = () => {
                 <div className="flex justify-between items-start">
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm font-bold text-white">{email.sender}</span>
-                      <span className="w-1 h-1 rounded-full bg-slate-600" />
-                      <span className="text-xs text-slate-400 font-mono">{email.date}</span>
+                      <span className="text-sm font-bold text-slate-800">{email.sender}</span>
+                      <span className="w-1 h-1 rounded-full bg-slate-400" />
+                      <span className="text-xs text-slate-500 font-mono">{email.date}</span>
                     </div>
-                    <h3 className="text-base font-semibold text-slate-100">{email.subject}</h3>
+                    <h3 className="text-base font-semibold text-slate-950">{email.subject}</h3>
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <span className="text-[10px] text-slate-400 bg-white/5 border border-glassBorder py-0.5 px-2 rounded-full font-mono">
+                    <span className="text-[10px] text-slate-600 bg-slate-100 border border-glassBorder py-0.5 px-2 rounded-full font-mono">
                       {email.category}
                     </span>
                     <span className={`text-[10px] font-mono py-0.5 px-2 rounded-full ${
@@ -146,22 +146,22 @@ export const MailCenter: React.FC = () => {
                   </div>
                 </div>
 
-                <p className="text-sm text-slate-400 leading-relaxed truncate">{email.snippet}</p>
+                <p className="text-sm text-slate-600 leading-relaxed truncate">{email.snippet}</p>
 
                 {/* AI Analysis Panel */}
-                <div className="bg-white/[0.02] border border-glassBorder/40 rounded-xl p-4 space-y-3">
+                <div className="bg-slate-50 border border-glassBorder/40 rounded-xl p-4 space-y-3">
                   <div className="flex items-center space-x-1.5 text-xs text-neonBlue font-mono font-bold">
                     <Sparkles className="w-3.5 h-3.5 animate-pulse" />
                     <span>AI EXTRACTION SUMMARY</span>
                   </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">{email.aiSummary}</p>
+                  <p className="text-xs text-slate-700 leading-relaxed">{email.aiSummary}</p>
                   
                   {email.actions.length > 0 && (
                     <div className="pt-2 border-t border-glassBorder/30 space-y-2">
                       <p className="text-[10px] text-slate-500 font-bold font-mono">REQUIRED ACTIONS</p>
                       <div className="flex flex-wrap gap-2">
                         {email.actions.map((act, i) => (
-                          <span key={i} className="text-xs bg-neonBlue/10 text-neonBlue py-1 px-2.5 rounded-lg border border-neonBlue/20 flex items-center">
+                          <span key={i} className="text-xs bg-neonBlue/10 text-neonBlue py-1 px-2.5 rounded-lg border border-neonBlue/20 flex items-center font-medium">
                             <AlertCircle className="w-3 h-3 mr-1.5 flex-shrink-0" />
                             {act}
                           </span>
@@ -178,17 +178,17 @@ export const MailCenter: React.FC = () => {
         {/* Sidebar Info Section */}
         <div className="space-y-6">
           <div className="glass-panel p-6 rounded-2xl border-glassBorder space-y-4">
-            <h2 className="text-md font-bold text-white flex items-center">
+            <h2 className="text-md font-bold text-slate-900 flex items-center">
               <ShieldAlert className="w-4 h-4 mr-2 text-neonBlue" />
               Action Agent Status
             </h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-slate-600 leading-relaxed">
               Our background scheduler matches key patterns in incoming mails and coordinates automatic scheduling.
             </p>
-            <div className="border-t border-glassBorder/60 pt-4 space-y-2 text-xs font-mono text-slate-500">
+            <div className="border-t border-glassBorder pt-4 space-y-2 text-xs font-mono text-slate-500">
               <div className="flex justify-between">
                 <span>Last Polled:</span>
-                <span className="text-white">Just now</span>
+                <span className="text-slate-800">Just now</span>
               </div>
               <div className="flex justify-between">
                 <span>Status:</span>
