@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, User, MessageSquare, Loader2 } from 'lucide-react';
+import { Send, Sparkles, User, MessageSquare, Loader2, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
 
@@ -94,6 +94,19 @@ export const Chat: React.FC = () => {
     }
   };
 
+  const handleClearChat = () => {
+    const confirmClear = window.confirm("Are you sure you want to clear the chat conversation?");
+    if (confirmClear) {
+      const initialMsg: Message = { 
+        sender: 'ai', 
+        text: `Hello ${user?.name || 'there'}! I am your LifePilot AI Assistant. I can:\n\n• **Send emails** — e.g. "send mail hello to friend@email.com"\n• **Summarize your inbox** — e.g. "summarize today's important emails"\n• **Answer questions** about your schedule, bills, and tasks\n\nHow can I help you today?`, 
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+      };
+      setMessages([initialMsg]);
+      sessionStorage.removeItem('lifepilot_chat_history');
+    }
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)] max-w-5xl mx-auto glass-panel rounded-3xl border-glassBorder overflow-hidden shadow-glass">
       {/* Chat header */}
@@ -113,6 +126,14 @@ export const Chat: React.FC = () => {
             </p>
           </div>
         </div>
+        
+        <button 
+          onClick={handleClearChat}
+          className="text-xs font-semibold text-slate-500 hover:text-critical border border-glassBorder hover:border-critical/30 bg-white hover:bg-critical/5 px-3 py-1.5 rounded-lg flex items-center space-x-1.5 shadow-sm transition-all"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          <span>Clear Chat</span>
+        </button>
       </div>
 
       {/* Messages Canvas */}
