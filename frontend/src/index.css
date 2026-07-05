@@ -3,22 +3,22 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bgDark: #0C0C0E;
-  --color-bgDarker: #09090B;
-  --color-glassBg: rgba(18, 18, 22, 0.8);
-  --color-glassBorder: rgba(255, 255, 255, 0.06);
-  --color-cardDark: rgba(18, 18, 22, 0.45);
+  --color-bgDark: #F1F5F9;
+  --color-bgDarker: #F8FAFC;
+  --color-glassBg: #FFFFFF;
+  --color-glassBorder: #E2E8F0;
+  --color-cardDark: #FFFFFF;
   
-  --color-neonBlue: #2563EB;
+  --color-neonBlue: #1E3A8A;
   --color-neonPurple: #4F46E5;
-  --color-neonGreen: #10B981;
-  --color-neonPink: #4B5563;
-  --color-neonOrange: #D97706;
+  --color-neonGreen: #15803D;
+  --color-neonPink: #64748B;
+  --color-neonOrange: #B45309;
   
-  --color-critical: #EF4444;
-  --color-high: #F59E0B;
-  --color-medium: #EAB308;
-  --color-low: #10B981;
+  --color-critical: #DC2626;
+  --color-high: #D97706;
+  --color-medium: #CA8A04;
+  --color-low: #15803D;
   
   --font-sans: "Inter", "system-ui", "sans-serif";
   --font-mono: "JetBrains Mono", "monospace";
@@ -27,16 +27,14 @@
 }
 
 body {
-  @apply bg-[#09090B] text-slate-200 font-sans antialiased selection:bg-neonBlue/20 selection:text-white;
+  @apply bg-[#F1F5F9] text-slate-800 font-sans antialiased selection:bg-neonBlue/10 selection:text-neonBlue;
 }
 
 /* Formal Corporate Card Panels */
 .glass-panel {
-  background: rgba(18, 18, 22, 0.75);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.3);
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
 }
 
 .glass-panel-interactive {
@@ -44,24 +42,24 @@ body {
 }
 
 .glass-panel-interactive:hover {
-  background: rgba(22, 22, 26, 0.85);
-  border-color: rgba(37, 99, 235, 0.3);
-  box-shadow: 0 8px 30px 0 rgba(0, 0, 0, 0.4);
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
   transform: translateY(-1px);
 }
 
 .glass-input {
-  background: rgba(18, 18, 22, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
   border-radius: 0.5rem;
-  color: #fff;
+  color: #0F172A;
   transition: all 0.15s ease-in-out;
 }
 
 .glass-input:focus {
-  background: rgba(18, 18, 22, 0.75);
-  border-color: #2563EB;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  background: #FFFFFF;
+  border-color: #1E3A8A;
+  box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.1);
   outline: none;
 }
 
@@ -72,44 +70,44 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(9, 9, 11, 0.4);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(37, 99, 235, 0.3);
+  background: rgba(30, 58, 138, 0.3);
 }
 
 /* Neutral Professional Typography */
 .glow-text-blue {
-  color: #FFFFFF;
+  color: #0F172A;
 }
 
 .glow-text-purple {
-  color: #FFFFFF;
+  color: #0F172A;
 }
 
 .glow-text-pink {
-  color: #F1F5F9;
+  color: #334155;
 }
 
-/* Executive Slate-Indigo Gradients */
+/* Executive Slate-Blue Gradients */
 .gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-slate-100 via-slate-200 to-indigo-300;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-900;
 }
 
 .gradient-border {
   position: relative;
-  background: linear-gradient(to right, #2563EB, #4F46E5, #64748B);
+  background: linear-gradient(to right, #1E3A8A, #4F46E5, #94A3B8);
   padding: 1px;
 }
 
 .gradient-border-inner {
-  background: #0C0C0E;
+  background: #FFFFFF;
   height: 100%;
   width: 100%;
 }

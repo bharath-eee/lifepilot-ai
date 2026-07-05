@@ -12,9 +12,19 @@ interface Message {
 
 export const Chat: React.FC = () => {
   const { token, user } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([
-    { sender: 'ai', text: `Hello ${user?.name || 'there'}! I am your LifePilot AI Assistant. I can:\n\n• **Send emails** — e.g. "send mail hello to friend@email.com"\n• **Summarize your inbox** — e.g. "summarize today's important emails"\n• **Answer questions** about your schedule, bills, and tasks\n\nHow can I help you today?`, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const saved = sessionStorage.getItem('lifepilot_chat_history');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Failed to parse saved chat history", e);
+      }
+    }
+    return [
+      { sender: 'ai', text: `Hello ${user?.name || 'there'}! I am your LifePilot AI Assistant. I can:\n\n• **Send emails** — e.g. "send mail hello to friend@email.com"\n• **Summarize your inbox** — e.g. "summarize today's important emails"\n• **Answer questions** about your schedule, bills, and tasks\n\nHow can I help you today?`, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+    ];
+  });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -25,6 +35,10 @@ export const Chat: React.FC = () => {
 
   useEffect(() => {
     scrollToBottom();
+  }, [messages]);
+
+  useEffect(() => {
+    sessionStorage.setItem('lifepilot_chat_history', JSON.stringify(messages));
   }, [messages]);
 
   const getTimestamp = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
