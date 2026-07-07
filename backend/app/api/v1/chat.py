@@ -24,6 +24,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     message: str
     history: Optional[List[ChatMessage]] = None
+    attachment: Optional[dict] = None
 
 class ChatResponse(BaseModel):
     reply: str
@@ -65,13 +66,44 @@ async def get_gmail_service(user_email: str):
     
     return build("gmail", "v1", credentials=creds)
 
-async def send_email_via_gmail(service, to: str, subject: str, body: str, sender_email: str) -> dict:
+async def send_email_via_gmail(service, to: str, subject: str, body: str, sender_email: str, attachment: Optional[dict] = None) -> dict:
     """Send an email using the Gmail API."""
-    message = MIMEText(body)
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from email.mime.base import MIMEBase
+    from email import encoders
+    import base64
+    
+    # Clean double escaped newlines in body
+    clean_body = body.replace("\\n", "\n").replace("\\\\n", "\n")
+    
+    # Use MIMEMultipart to support optional file attachments
+    message = MIMEMultipart()
     message["to"] = to
     message["from"] = sender_email
     message["subject"] = subject
     
+    message.attach(MIMEText(clean_body, "plain"))
+    
+    if attachment:
+        filename = attachment.get("filename", "attachment")
+        content_b64 = attachment.get("content", "")
+        mime_type = attachment.get("mime_type", "application/octet-stream")
+        
+        if content_b64:
+            try:
+                file_data = base64.b64decode(content_b64)
+                part = MIMEBase(*mime_type.split("/", 1))
+                part.set_payload(file_data)
+                encoders.encode_base64(part)
+                part.add_header(
+                    "Content-Disposition",
+                    f"attachment; filename={filename}",
+                )
+                message.attach(part)
+            except Exception as e:
+                print(f"Failed to attach file: {e}")
+                
     raw = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8")
     
     try:
@@ -372,7 +404,8 @@ async def chat(request: ChatRequest, current_user: dict = Depends(get_current_us
             to=send_cmd["to"],
             subject=send_cmd["subject"],
             body=send_cmd["body"],
-            sender_email=user_email
+            sender_email=user_email,
+            attachment=request.attachment
         )
         if result["success"]:
             return ChatResponse(
@@ -444,7 +477,14 @@ async def chat(request: ChatRequest, current_user: dict = Depends(get_current_us
                         action_taken="email_send_failed"
                     )
             
-            result = await send_email_via_gmail(gmail_service, to=to, subject=subject, body=body, sender_email=user_email)
+            result = await send_email_via_gmail(
+                gmail_service, 
+                to=to, 
+                subject=subject, 
+                body=body, 
+                sender_email=user_email, 
+                attachment=request.attachment
+            )
             if result["success"]:
                 return ChatResponse(
                     reply=f"{clean_reply}\n\n✅ Email sent successfully to **{to}**!\n**Subject:** {subject}",

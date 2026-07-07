@@ -232,60 +232,94 @@ async def get_emails(current_user: dict = Depends(get_current_user)):
         parsed_emails = []
         for msg in messages:
             msg_id = msg["id"]
-            # Fetch message details
-            msg_detail = service.users().messages().get(userId="me", id=msg_id, format="full").execute()
             
-            payload = msg_detail.get("payload", {})
-            headers = payload.get("headers", [])
-            
-            subject = "No Subject"
-            sender = "Unknown Sender"
-            date = "Unknown Date"
-            
-            for h in headers:
-                name = h.get("name", "").lower()
-                if name == "subject":
-                    subject = h.get("value")
-                elif name == "from":
-                    sender = h.get("value")
-                elif name == "date":
-                    date = h.get("value")
-            
-            snippet = msg_detail.get("snippet", "")
-            body = get_email_body(payload)
-            
-            # Analyze each email with AI/Heuristics
-            ai_data = await analyze_email_with_ai(sender, subject, snippet, body)
-            
-            parsed_emails.append({
-                "id": msg_id,
-                "sender": sender,
-                "subject": subject,
-                "date": date,
-                "snippet": snippet,
-                "category": ai_data["category"],
-                "priority": ai_data["priority"],
-                "aiSummary": ai_data["aiSummary"],
-                "actions": ai_data["actions"]
-            })
+            # Check MongoDB cache first to avoid re-running AI analysis on known emails
+            cached_email = None
+            if db is not None:
+                cached_email = await db.analyzed_emails.find_one({"id": msg_id, "user_email": current_user["email"]})
+                
+            if cached_email:
+                parsed_emails.append({
+                    "id": cached_email["id"],
+                    "sender": cached_email["sender"],
+                    "subject": cached_email["subject"],
+                    "date": cached_email["date"],
+                    "snippet": cached_email["snippet"],
+                    "category": cached_email["category"],
+                    "priority": cached_email["priority"],
+                    "aiSummary": cached_email["aiSummary"],
+                    "actions": cached_email["actions"]
+                })
+            else:
+                # Fetch message details
+                msg_detail = service.users().messages().get(userId="me", id=msg_id, format="full").execute()
+                
+                payload = msg_detail.get("payload", {})
+                headers = payload.get("headers", [])
+                
+                subject = "No Subject"
+                sender = "Unknown Sender"
+                date = "Unknown Date"
+                
+                for h in headers:
+                    name = h.get("name", "").lower()
+                    if name == "subject":
+                        subject = h.get("value")
+                    elif name == "from":
+                        sender = h.get("value")
+                    elif name == "date":
+                        date = h.get("value")
+                
+                snippet = msg_detail.get("snippet", "")
+                body = get_email_body(payload)
+                
+                # Analyze email with AI/Heuristics
+                ai_data = await analyze_email_with_ai(sender, subject, snippet, body)
+                
+                email_item = {
+                    "id": msg_id,
+                    "sender": sender,
+                    "subject": subject,
+                    "date": date,
+                    "snippet": snippet,
+                    "category": ai_data["category"],
+                    "priority": ai_data["priority"],
+                    "aiSummary": ai_data["aiSummary"],
+                    "actions": ai_data["actions"]
+                }
+                
+                # Cache in MongoDB
+                if db is not None:
+                    await db.analyzed_emails.insert_one({
+                        **email_item,
+                        "user_email": current_user["email"]
+                    })
+                    
+                parsed_emails.append(email_item)
             
         return parsed_emails
         
     except Exception as e:
-        # If anything fails (e.g. Gmail API permission or token issues), log it and return mock fallback
         print(f"Error reading emails from Google API: {e}")
         return get_fallback_mock_emails()
 
 from pydantic import BaseModel
+from typing import Optional
+
 class SendEmailRequest(BaseModel):
     to: str
     subject: str
     body: str
+    attachment: Optional[dict] = None  # { filename: str, content: str (b64), mime_type: str }
 
 @router.post("/send", summary="Send an email directly")
 async def send_email(request: SendEmailRequest, current_user: dict = Depends(get_current_user)):
+    from email.mime.multipart import MIMEMultipart
     from email.mime.text import MIMEText
+    from email.mime.base import MIMEBase
+    from email import encoders
     import base64
+    
     user_email = current_user.get("email", "")
     db = get_database()
     if db is None:
@@ -297,7 +331,6 @@ async def send_email(request: SendEmailRequest, current_user: dict = Depends(get
         
     db_creds = user_doc["google_credentials"]
     
-    # Check if gmail.send permission is in scopes
     scopes = db_creds.get("scopes", [])
     if "https://www.googleapis.com/auth/gmail.send" not in scopes:
         raise HTTPException(status_code=403, detail="Gmail send permission is missing. Please log out and log in again.")
@@ -326,14 +359,35 @@ async def send_email(request: SendEmailRequest, current_user: dict = Depends(get
             
     service = build("gmail", "v1", credentials=creds)
     
-    # Clean double escaped newlines in body
     clean_body = request.body.replace("\\n", "\n").replace("\\\\n", "\n")
     
-    message = MIMEText(clean_body)
+    # Use MIMEMultipart to support optional file attachments
+    message = MIMEMultipart()
     message["to"] = request.to
     message["from"] = user_email
     message["subject"] = request.subject
     
+    message.attach(MIMEText(clean_body, "plain"))
+    
+    if request.attachment:
+        filename = request.attachment.get("filename", "attachment")
+        content_b64 = request.attachment.get("content", "")
+        mime_type = request.attachment.get("mime_type", "application/octet-stream")
+        
+        if content_b64:
+            try:
+                file_data = base64.b64decode(content_b64)
+                part = MIMEBase(*mime_type.split("/", 1))
+                part.set_payload(file_data)
+                encoders.encode_base64(part)
+                part.add_header(
+                    "Content-Disposition",
+                    f"attachment; filename={filename}",
+                )
+                message.attach(part)
+            except Exception as e:
+                print(f"Failed to attach file in direct send: {e}")
+                
     raw = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8")
     
     try:

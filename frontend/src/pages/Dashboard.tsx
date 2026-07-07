@@ -41,7 +41,7 @@ interface MailItem {
 export const Dashboard: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [bills, setBills] = useState<Bill[]>([]);
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -115,7 +115,7 @@ export const Dashboard: React.FC = () => {
         <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-2">
-              Good Morning, <span className="text-neonBlue">Bharath</span>
+              Good Morning, <span className="text-neonBlue">{user?.name ? user.name.split(' ')[0] : 'User'}</span>
             </h1>
             <p className="text-slate-600 text-sm md:text-base max-w-xl">
               Here is your AI productivity blueprint for today. I've highlighted 3 critical tasks and 1 upcoming payment requiring immediate action.

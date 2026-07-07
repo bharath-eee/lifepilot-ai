@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Sparkles, Filter, AlertCircle, ShieldAlert, Reply, Send } from 'lucide-react';
+import { Mail, Sparkles, Filter, AlertCircle, ShieldAlert, Reply, Send, Paperclip } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
 
@@ -26,6 +26,28 @@ export const MailCenter: React.FC = () => {
   const [replyText, setReplyText] = useState<string>('');
   const [sendingReply, setSendingReply] = useState<boolean>(false);
   const [replySuccess, setReplySuccess] = useState<string | null>(null);
+  const [replyAttachment, setReplyAttachment] = useState<{ filename: string, content: string, mime_type: string } | null>(null);
+
+  const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Attachment size should be under 5MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        const base64Content = reader.result.split(',')[1];
+        setReplyAttachment({
+          filename: file.name,
+          content: base64Content,
+          mime_type: file.type || 'application/octet-stream'
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSendReply = async (email: Email) => {
     if (!replyText.trim()) return;
@@ -47,7 +69,8 @@ export const MailCenter: React.FC = () => {
         body: JSON.stringify({
           to: cleanRecipient,
           subject: `Re: ${email.subject}`,
-          body: replyText
+          body: replyText,
+          attachment: replyAttachment
         })
       });
 
@@ -57,6 +80,7 @@ export const MailCenter: React.FC = () => {
 
       setReplySuccess(email.id);
       setReplyText('');
+      setReplyAttachment(null);
       setTimeout(() => {
         setReplyingToId(null);
         setReplySuccess(null);
@@ -253,7 +277,33 @@ export const MailCenter: React.FC = () => {
                             className="w-full glass-input text-xs p-3 focus:ring-1 focus:ring-neonBlue"
                             disabled={sendingReply}
                           />
-                          <div className="flex justify-end">
+                          <div className="flex items-center justify-between">
+                            {/* File Attachment */}
+                            <div className="flex items-center space-x-2">
+                              <label className="cursor-pointer p-2 rounded-lg bg-slate-100 hover:bg-slate-200 border border-glassBorder text-slate-500 hover:text-slate-800 transition-colors flex items-center justify-center">
+                                <Paperclip className="w-4 h-4" />
+                                <input
+                                  type="file"
+                                  className="hidden"
+                                  onChange={handleFileAttach}
+                                  disabled={sendingReply}
+                                />
+                              </label>
+                              
+                              {replyAttachment && (
+                                <div className="text-xs bg-slate-100 border border-glassBorder px-2.5 py-1.5 rounded-lg flex items-center space-x-1.5 max-w-[200px]">
+                                  <span className="truncate text-slate-700 font-medium">{replyAttachment.filename}</span>
+                                  <button 
+                                    onClick={() => setReplyAttachment(null)}
+                                    className="text-slate-400 hover:text-critical font-bold flex-shrink-0"
+                                    type="button"
+                                  >
+                                    &times;
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+
                             <button
                               onClick={() => handleSendReply(email)}
                               disabled={sendingReply || !replyText.trim()}

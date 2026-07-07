@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, User, MessageSquare, Loader2, Trash2 } from 'lucide-react';
+import { Send, Sparkles, User, MessageSquare, Loader2, Trash2, Paperclip } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
 
@@ -12,6 +12,28 @@ interface Message {
 
 export const Chat: React.FC = () => {
   const { token, user } = useAuth();
+  const [chatAttachment, setChatAttachment] = useState<{ filename: string, content: string, mime_type: string } | null>(null);
+
+  const handleChatFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Attachment size should be under 5MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        const base64Content = reader.result.split(',')[1];
+        setChatAttachment({
+          filename: file.name,
+          content: base64Content,
+          mime_type: file.type || 'application/octet-stream'
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
   const [messages, setMessages] = useState<Message[]>(() => {
     const saved = sessionStorage.getItem('lifepilot_chat_history');
     if (saved) {
@@ -67,7 +89,8 @@ export const Chat: React.FC = () => {
         },
         body: JSON.stringify({ 
           message: currentInput,
-          history: chatHistory
+          history: chatHistory,
+          attachment: chatAttachment
         })
       });
 
@@ -76,6 +99,7 @@ export const Chat: React.FC = () => {
       }
 
       const data = await response.json();
+      setChatAttachment(null);
       
       setMessages(prev => [...prev, {
         sender: 'ai',
@@ -207,22 +231,45 @@ export const Chat: React.FC = () => {
       </div>
 
       {/* Input Form */}
-      <form onSubmit={handleSend} className="p-4 border-t border-glassBorder bg-slate-50 flex items-center space-x-3">
-        <input 
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask LifePilot to send emails, summarize inbox, track bills..."
-          className="flex-1 glass-input py-3 px-4 text-sm"
-          disabled={isLoading}
-        />
-        <button 
-          type="submit"
-          disabled={isLoading}
-          className="p-3 bg-neonBlue hover:bg-neonBlue/90 text-white rounded-xl shadow-sm hover:opacity-90 transition-all disabled:opacity-50"
-        >
-          {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-        </button>
+      <form onSubmit={handleSend} className="p-4 border-t border-glassBorder bg-slate-50 flex flex-col space-y-3">
+        {chatAttachment && (
+          <div className="flex items-center space-x-2 bg-white border border-glassBorder p-2 rounded-xl self-start max-w-[300px] animate-fade-in shadow-sm">
+            <span className="text-xs truncate text-slate-700 font-medium">{chatAttachment.filename}</span>
+            <button 
+              onClick={() => setChatAttachment(null)}
+              className="text-slate-400 hover:text-critical font-bold text-xs"
+              type="button"
+            >
+              &times;
+            </button>
+          </div>
+        )}
+        <div className="flex items-center space-x-3 w-full">
+          <label className="cursor-pointer p-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-glassBorder text-slate-500 hover:text-slate-800 transition-colors flex items-center justify-center flex-shrink-0">
+            <Paperclip className="w-4 h-4" />
+            <input
+              type="file"
+              className="hidden"
+              onChange={handleChatFileAttach}
+              disabled={isLoading}
+            />
+          </label>
+          <input 
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask LifePilot to send emails, summarize inbox, track bills..."
+            className="flex-1 glass-input py-3 px-4 text-sm"
+            disabled={isLoading}
+          />
+          <button 
+            type="submit"
+            disabled={isLoading}
+            className="p-3 bg-neonBlue hover:bg-neonBlue/90 text-white rounded-xl shadow-sm hover:opacity-90 transition-all disabled:opacity-50"
+          >
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          </button>
+        </div>
       </form>
     </div>
   );
