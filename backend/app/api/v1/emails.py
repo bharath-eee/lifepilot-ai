@@ -304,13 +304,14 @@ async def get_emails(current_user: dict = Depends(get_current_user)):
         return get_fallback_mock_emails()
 
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 class SendEmailRequest(BaseModel):
     to: str
     subject: str
     body: str
-    attachment: Optional[dict] = None  # { filename: str, content: str (b64), mime_type: str }
+    attachment: Optional[dict] = None  # Legacy support
+    attachments: Optional[List[dict]] = None  # { filename: str, content: str (b64), mime_type: str }[]
 
 @router.post("/send", summary="Send an email directly")
 async def send_email(request: SendEmailRequest, current_user: dict = Depends(get_current_user)):
@@ -369,10 +370,17 @@ async def send_email(request: SendEmailRequest, current_user: dict = Depends(get
     
     message.attach(MIMEText(clean_body, "plain"))
     
-    if request.attachment:
-        filename = request.attachment.get("filename", "attachment")
-        content_b64 = request.attachment.get("content", "")
-        mime_type = request.attachment.get("mime_type", "application/octet-stream")
+    # Gather all attachments (both list and single legacy param)
+    all_attachments = []
+    if request.attachments:
+        all_attachments.extend(request.attachments)
+    elif request.attachment:
+        all_attachments.append(request.attachment)
+        
+    for att in all_attachments:
+        filename = att.get("filename", "attachment")
+        content_b64 = att.get("content", "")
+        mime_type = att.get("mime_type", "application/octet-stream")
         
         if content_b64:
             try:
@@ -386,7 +394,7 @@ async def send_email(request: SendEmailRequest, current_user: dict = Depends(get
                 )
                 message.attach(part)
             except Exception as e:
-                print(f"Failed to attach file in direct send: {e}")
+                print(f"Failed to attach file: {e}")
                 
     raw = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8")
     

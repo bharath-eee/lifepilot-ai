@@ -26,7 +26,7 @@ export const MailCenter: React.FC = () => {
   const [replyText, setReplyText] = useState<string>('');
   const [sendingReply, setSendingReply] = useState<boolean>(false);
   const [replySuccess, setReplySuccess] = useState<string | null>(null);
-  const [replyAttachment, setReplyAttachment] = useState<{ filename: string, content: string, mime_type: string } | null>(null);
+  const [replyAttachments, setReplyAttachments] = useState<{ filename: string, content: string, mime_type: string }[]>([]);
 
   const handleFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -39,14 +39,22 @@ export const MailCenter: React.FC = () => {
     reader.onload = () => {
       if (typeof reader.result === 'string') {
         const base64Content = reader.result.split(',')[1];
-        setReplyAttachment({
-          filename: file.name,
-          content: base64Content,
-          mime_type: file.type || 'application/octet-stream'
-        });
+        setReplyAttachments(prev => [
+          ...prev,
+          {
+            filename: file.name,
+            content: base64Content,
+            mime_type: file.type || 'application/octet-stream'
+          }
+        ]);
       }
     };
     reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleRemoveReplyAttachment = (index: number) => {
+    setReplyAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSendReply = async (email: Email) => {
@@ -70,7 +78,7 @@ export const MailCenter: React.FC = () => {
           to: cleanRecipient,
           subject: `Re: ${email.subject}`,
           body: replyText,
-          attachment: replyAttachment
+          attachments: replyAttachments
         })
       });
 
@@ -80,7 +88,7 @@ export const MailCenter: React.FC = () => {
 
       setReplySuccess(email.id);
       setReplyText('');
-      setReplyAttachment(null);
+      setReplyAttachments([]);
       setTimeout(() => {
         setReplyingToId(null);
         setReplySuccess(null);
@@ -290,18 +298,18 @@ export const MailCenter: React.FC = () => {
                                 />
                               </label>
                               
-                              {replyAttachment && (
-                                <div className="text-xs bg-slate-100 border border-glassBorder px-2.5 py-1.5 rounded-lg flex items-center space-x-1.5 max-w-[200px]">
-                                  <span className="truncate text-slate-700 font-medium">{replyAttachment.filename}</span>
+                              {replyAttachments.map((att, idx) => (
+                                <div key={idx} className="text-xs bg-slate-100 border border-glassBorder px-2.5 py-1.5 rounded-lg flex items-center space-x-1.5 max-w-[150px]">
+                                  <span className="truncate text-slate-700 font-medium">{att.filename}</span>
                                   <button 
-                                    onClick={() => setReplyAttachment(null)}
+                                    onClick={() => handleRemoveReplyAttachment(idx)}
                                     className="text-slate-400 hover:text-critical font-bold flex-shrink-0"
                                     type="button"
                                   >
                                     &times;
                                   </button>
                                 </div>
-                              )}
+                              ))}
                             </div>
 
                             <button

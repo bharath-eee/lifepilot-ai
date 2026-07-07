@@ -25,6 +25,7 @@ class ChatRequest(BaseModel):
     message: str
     history: Optional[List[ChatMessage]] = None
     attachment: Optional[dict] = None
+    attachments: Optional[List[dict]] = None
 
 class ChatResponse(BaseModel):
     reply: str
@@ -66,7 +67,7 @@ async def get_gmail_service(user_email: str):
     
     return build("gmail", "v1", credentials=creds)
 
-async def send_email_via_gmail(service, to: str, subject: str, body: str, sender_email: str, attachment: Optional[dict] = None) -> dict:
+async def send_email_via_gmail(service, to: str, subject: str, body: str, sender_email: str, attachment: Optional[dict] = None, attachments: Optional[List[dict]] = None) -> dict:
     """Send an email using the Gmail API."""
     from email.mime.multipart import MIMEMultipart
     from email.mime.text import MIMEText
@@ -85,10 +86,17 @@ async def send_email_via_gmail(service, to: str, subject: str, body: str, sender
     
     message.attach(MIMEText(clean_body, "plain"))
     
-    if attachment:
-        filename = attachment.get("filename", "attachment")
-        content_b64 = attachment.get("content", "")
-        mime_type = attachment.get("mime_type", "application/octet-stream")
+    # Gather all attachments
+    all_attachments = []
+    if attachments:
+        all_attachments.extend(attachments)
+    elif attachment:
+        all_attachments.append(attachment)
+        
+    for att in all_attachments:
+        filename = att.get("filename", "attachment")
+        content_b64 = att.get("content", "")
+        mime_type = att.get("mime_type", "application/octet-stream")
         
         if content_b64:
             try:
@@ -312,6 +320,10 @@ async def get_ai_response(user_message: str, context: str, user_email: str, hist
         "You help the user manage their emails, calendar, tasks, and scheduling. "
         f"The user's email is: {user_email}.\n\n"
         "You have the capability to interact with the user's Google Calendar and send emails. "
+        "The user is able to upload file attachments. If they upload one or more files in the chat input, "
+        "these files will be automatically attached when you trigger the [ACTION: EMAIL_SEND] tag. "
+        "Therefore, you CAN now handle file attachments! Affirm to the user that files will be attached "
+        "automatically when triggered.\n\n"
         "To perform these actions, you MUST append the appropriate action tag at the very end of your response. "
         "The backend will intercept this tag, execute the action, and report the result.\n\n"
         "Available Action Tags:\n"
@@ -405,7 +417,8 @@ async def chat(request: ChatRequest, current_user: dict = Depends(get_current_us
             subject=send_cmd["subject"],
             body=send_cmd["body"],
             sender_email=user_email,
-            attachment=request.attachment
+            attachment=request.attachment,
+            attachments=request.attachments
         )
         if result["success"]:
             return ChatResponse(
@@ -483,7 +496,8 @@ async def chat(request: ChatRequest, current_user: dict = Depends(get_current_us
                 subject=subject, 
                 body=body, 
                 sender_email=user_email, 
-                attachment=request.attachment
+                attachment=request.attachment,
+                attachments=request.attachments
             )
             if result["success"]:
                 return ChatResponse(

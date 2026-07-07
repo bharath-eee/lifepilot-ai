@@ -12,7 +12,7 @@ interface Message {
 
 export const Chat: React.FC = () => {
   const { token, user } = useAuth();
-  const [chatAttachment, setChatAttachment] = useState<{ filename: string, content: string, mime_type: string } | null>(null);
+  const [chatAttachments, setChatAttachments] = useState<{ filename: string, content: string, mime_type: string }[]>([]);
 
   const handleChatFileAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -25,14 +25,22 @@ export const Chat: React.FC = () => {
     reader.onload = () => {
       if (typeof reader.result === 'string') {
         const base64Content = reader.result.split(',')[1];
-        setChatAttachment({
-          filename: file.name,
-          content: base64Content,
-          mime_type: file.type || 'application/octet-stream'
-        });
+        setChatAttachments(prev => [
+          ...prev,
+          {
+            filename: file.name,
+            content: base64Content,
+            mime_type: file.type || 'application/octet-stream'
+          }
+        ]);
       }
     };
     reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleRemoveChatAttachment = (index: number) => {
+    setChatAttachments(prev => prev.filter((_, i) => i !== index));
   };
   const [messages, setMessages] = useState<Message[]>(() => {
     const saved = sessionStorage.getItem('lifepilot_chat_history');
@@ -90,7 +98,7 @@ export const Chat: React.FC = () => {
         body: JSON.stringify({ 
           message: currentInput,
           history: chatHistory,
-          attachment: chatAttachment
+          attachments: chatAttachments
         })
       });
 
@@ -99,7 +107,7 @@ export const Chat: React.FC = () => {
       }
 
       const data = await response.json();
-      setChatAttachment(null);
+      setChatAttachments([]);
       
       setMessages(prev => [...prev, {
         sender: 'ai',
@@ -232,16 +240,20 @@ export const Chat: React.FC = () => {
 
       {/* Input Form */}
       <form onSubmit={handleSend} className="p-4 border-t border-glassBorder bg-slate-50 flex flex-col space-y-3">
-        {chatAttachment && (
-          <div className="flex items-center space-x-2 bg-white border border-glassBorder p-2 rounded-xl self-start max-w-[300px] animate-fade-in shadow-sm">
-            <span className="text-xs truncate text-slate-700 font-medium">{chatAttachment.filename}</span>
-            <button 
-              onClick={() => setChatAttachment(null)}
-              className="text-slate-400 hover:text-critical font-bold text-xs"
-              type="button"
-            >
-              &times;
-            </button>
+        {chatAttachments.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {chatAttachments.map((att, idx) => (
+              <div key={idx} className="flex items-center space-x-2 bg-white border border-glassBorder p-2 rounded-xl self-start max-w-[200px] animate-fade-in shadow-sm">
+                <span className="text-xs truncate text-slate-700 font-medium">{att.filename}</span>
+                <button 
+                  onClick={() => handleRemoveChatAttachment(idx)}
+                  className="text-slate-400 hover:text-critical font-bold text-xs flex-shrink-0"
+                  type="button"
+                >
+                  &times;
+                </button>
+              </div>
+            ))}
           </div>
         )}
         <div className="flex items-center space-x-3 w-full">
