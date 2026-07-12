@@ -134,9 +134,14 @@ export const BillManager: React.FC = () => {
       });
       if (response.ok) {
         setBills(bills.filter(b => b.id !== id));
+      } else {
+        const errText = await response.text();
+        console.error("Failed to delete bill:", errText);
+        alert(`Failed to delete bill: ${response.status} - ${errText || 'Unknown error'}.\n\nIf you get a 404 or 405 error, please restart your backend Docker container (docker-compose down && docker-compose up --build) to apply the new DELETE route!`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to delete bill", err);
+      alert(`Error deleting bill: ${err.message}`);
     }
   };
 
