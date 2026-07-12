@@ -51,7 +51,7 @@ async def login():
         }
         local_jwt = create_access_token(data=mock_payload)
         encoded_user = urllib.parse.quote(json.dumps(mock_payload))
-        return RedirectResponse(f"http://localhost:5173/login-success?token={local_jwt}&user={encoded_user}")
+        return RedirectResponse(f"{settings.FRONTEND_URL}/login-success?token={local_jwt}&user={encoded_user}")
 
     try:
         flow = Flow.from_client_config(
