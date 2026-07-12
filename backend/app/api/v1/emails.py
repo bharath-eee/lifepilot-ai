@@ -31,7 +31,7 @@ def get_email_body(payload: dict) -> str:
                     pass
     return body
 
-async def analyze_email_with_ai(sender: str, subject: str, snippet: str, body: str) -> Dict[str, Any]:
+async def analyze_email_with_ai(sender: str, subject: str, snippet: str, body: str, use_llm: bool = True) -> Dict[str, Any]:
     trimmed_body = (body or "")[:1500]
     
     # Default fallback heuristics
@@ -76,7 +76,7 @@ async def analyze_email_with_ai(sender: str, subject: str, snippet: str, body: s
         fallback_analysis["actions"] = ["Track shipment delivery"]
     
     # If OpenRouter is configured and not mock, call it
-    if settings.OPENROUTER_API_KEY and settings.OPENROUTER_API_KEY != "mock-openrouter-key":
+    if use_llm and settings.OPENROUTER_API_KEY and settings.OPENROUTER_API_KEY != "mock-openrouter-key":
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 prompt = (
@@ -222,8 +222,8 @@ async def get_emails(current_user: dict = Depends(get_current_user)):
         # Connect to Gmail API
         service = build("gmail", "v1", credentials=creds)
         
-        # List latest 100 messages from Inbox
-        results = service.users().messages().list(userId="me", maxResults=100, labelIds=["INBOX"]).execute()
+        # List latest 1000 messages from Inbox
+        results = service.users().messages().list(userId="me", maxResults=1000, labelIds=["INBOX"]).execute()
         messages = results.get("messages", [])
         
         if not messages:
@@ -239,9 +239,9 @@ async def get_emails(current_user: dict = Depends(get_current_user)):
             cached_emails_dict = {email["id"]: email for email in cached_emails}
             
         import asyncio
-        semaphore = asyncio.Semaphore(15) # Allow up to 15 concurrent fetches
+        semaphore = asyncio.Semaphore(35) # Allow up to 35 concurrent fetches
         
-        async def fetch_and_analyze(msg_id: str, client: httpx.AsyncClient):
+        async def fetch_and_analyze(msg_id: str, client: httpx.AsyncClient, use_llm: bool):
             async with semaphore:
                 try:
                     headers = {"Authorization": f"Bearer {creds.token}"}
@@ -273,8 +273,8 @@ async def get_emails(current_user: dict = Depends(get_current_user)):
                     snippet = msg_detail.get("snippet", "")
                     body = get_email_body(payload)
                     
-                    # Analyze email with AI/Heuristics
-                    ai_data = await analyze_email_with_ai(sender, subject, snippet, body)
+                    # Analyze email with AI/Heuristics (only use LLM for top 20 latest emails)
+                    ai_data = await analyze_email_with_ai(sender, subject, snippet, body, use_llm=use_llm)
                     
                     email_item = {
                         "id": msg_id,
@@ -303,14 +303,18 @@ async def get_emails(current_user: dict = Depends(get_current_user)):
         # Build list in correct order
         uncached_ids = [msg_id for msg_id in msg_ids if msg_id not in cached_emails_dict]
         
-        # Limit the number of uncached emails we resolve in a single request to 40
-        # to prevent timeouts and heavy rate limits.
-        uncached_ids_to_fetch = uncached_ids[:40]
+        # Resolve up to 1000 uncached emails in a single request to cover the full inbox
+        # while using light heuristics for older ones.
+        uncached_ids_to_fetch = uncached_ids[:1000]
         
         fetched_emails_dict = {}
         if uncached_ids_to_fetch:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                tasks = [fetch_and_analyze(msg_id, client) for msg_id in uncached_ids_to_fetch]
+            async with httpx.AsyncClient(timeout=45.0) as client:
+                tasks = []
+                for msg_id in uncached_ids_to_fetch:
+                    idx = msg_ids.index(msg_id)
+                    use_llm = (idx < 20)
+                    tasks.append(fetch_and_analyze(msg_id, client, use_llm=use_llm))
                 results_list = await asyncio.gather(*tasks)
                 for r in results_list:
                     if r:
