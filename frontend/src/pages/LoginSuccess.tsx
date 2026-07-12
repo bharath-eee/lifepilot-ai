@@ -39,10 +39,10 @@ export const LoginSuccess: React.FC = () => {
   }, [authToken, navigate]);
 
   return (
-    <div className="min-h-screen bg-[#05070C] flex flex-col justify-center items-center p-6 text-white font-sans">
+    <div className="min-h-screen bg-bgDarker flex flex-col justify-center items-center p-6 text-slate-800 font-sans">
       <div className="flex flex-col items-center space-y-4">
         <Loader2 className="w-10 h-10 text-neonBlue animate-spin" />
-        <p className="text-slate-400 font-mono text-sm animate-pulse">Authenticating your Google session...</p>
+        <p className="text-slate-500 font-mono text-sm animate-pulse">Authenticating your Google session...</p>
       </div>
     </div>
   );
