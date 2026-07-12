@@ -222,23 +222,104 @@ async def get_emails(current_user: dict = Depends(get_current_user)):
         # Connect to Gmail API
         service = build("gmail", "v1", credentials=creds)
         
-        # List latest 10 messages from Inbox
-        results = service.users().messages().list(userId="me", maxResults=10, labelIds=["INBOX"]).execute()
+        # List latest 100 messages from Inbox
+        results = service.users().messages().list(userId="me", maxResults=100, labelIds=["INBOX"]).execute()
         messages = results.get("messages", [])
         
         if not messages:
             return []
             
-        parsed_emails = []
-        for msg in messages:
-            msg_id = msg["id"]
+        msg_ids = [msg["id"] for msg in messages]
+        
+        # Check cache first (bulk fetch from MongoDB)
+        cached_emails_dict = {}
+        if db is not None:
+            cursor = db.analyzed_emails.find({"id": {"$in": msg_ids}, "user_email": current_user["email"]})
+            cached_emails = await cursor.to_list(None)
+            cached_emails_dict = {email["id"]: email for email in cached_emails}
             
-            # Check MongoDB cache first to avoid re-running AI analysis on known emails
-            cached_email = None
-            if db is not None:
-                cached_email = await db.analyzed_emails.find_one({"id": msg_id, "user_email": current_user["email"]})
-                
-            if cached_email:
+        import asyncio
+        semaphore = asyncio.Semaphore(15) # Allow up to 15 concurrent fetches
+        
+        async def fetch_and_analyze(msg_id: str, client: httpx.AsyncClient):
+            async with semaphore:
+                try:
+                    headers = {"Authorization": f"Bearer {creds.token}"}
+                    response = await client.get(
+                        f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{msg_id}?format=full",
+                        headers=headers,
+                        timeout=15.0
+                    )
+                    if response.status_code != 200:
+                        return None
+                        
+                    msg_detail = response.json()
+                    payload = msg_detail.get("payload", {})
+                    msg_headers = payload.get("headers", [])
+                    
+                    subject = "No Subject"
+                    sender = "Unknown Sender"
+                    date = "Unknown Date"
+                    
+                    for h in msg_headers:
+                        name = h.get("name", "").lower()
+                        if name == "subject":
+                            subject = h.get("value")
+                        elif name == "from":
+                            sender = h.get("value")
+                        elif name == "date":
+                            date = h.get("value")
+                            
+                    snippet = msg_detail.get("snippet", "")
+                    body = get_email_body(payload)
+                    
+                    # Analyze email with AI/Heuristics
+                    ai_data = await analyze_email_with_ai(sender, subject, snippet, body)
+                    
+                    email_item = {
+                        "id": msg_id,
+                        "sender": sender,
+                        "subject": subject,
+                        "date": date,
+                        "snippet": snippet,
+                        "category": ai_data["category"],
+                        "priority": ai_data["priority"],
+                        "aiSummary": ai_data["aiSummary"],
+                        "actions": ai_data["actions"]
+                    }
+                    
+                    # Cache in MongoDB
+                    if db is not None:
+                        await db.analyzed_emails.insert_one({
+                            **email_item,
+                            "user_email": current_user["email"]
+                        })
+                        
+                    return email_item
+                except Exception as e:
+                    print(f"Error fetching/analyzing email {msg_id}: {e}")
+                    return None
+
+        # Build list in correct order
+        uncached_ids = [msg_id for msg_id in msg_ids if msg_id not in cached_emails_dict]
+        
+        # Limit the number of uncached emails we resolve in a single request to 40
+        # to prevent timeouts and heavy rate limits.
+        uncached_ids_to_fetch = uncached_ids[:40]
+        
+        fetched_emails_dict = {}
+        if uncached_ids_to_fetch:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                tasks = [fetch_and_analyze(msg_id, client) for msg_id in uncached_ids_to_fetch]
+                results_list = await asyncio.gather(*tasks)
+                for r in results_list:
+                    if r:
+                        fetched_emails_dict[r["id"]] = r
+                        
+        parsed_emails = []
+        for msg_id in msg_ids:
+            if msg_id in cached_emails_dict:
+                cached_email = cached_emails_dict[msg_id]
                 parsed_emails.append({
                     "id": cached_email["id"],
                     "sender": cached_email["sender"],
@@ -250,53 +331,9 @@ async def get_emails(current_user: dict = Depends(get_current_user)):
                     "aiSummary": cached_email["aiSummary"],
                     "actions": cached_email["actions"]
                 })
-            else:
-                # Fetch message details
-                msg_detail = service.users().messages().get(userId="me", id=msg_id, format="full").execute()
+            elif msg_id in fetched_emails_dict:
+                parsed_emails.append(fetched_emails_dict[msg_id])
                 
-                payload = msg_detail.get("payload", {})
-                headers = payload.get("headers", [])
-                
-                subject = "No Subject"
-                sender = "Unknown Sender"
-                date = "Unknown Date"
-                
-                for h in headers:
-                    name = h.get("name", "").lower()
-                    if name == "subject":
-                        subject = h.get("value")
-                    elif name == "from":
-                        sender = h.get("value")
-                    elif name == "date":
-                        date = h.get("value")
-                
-                snippet = msg_detail.get("snippet", "")
-                body = get_email_body(payload)
-                
-                # Analyze email with AI/Heuristics
-                ai_data = await analyze_email_with_ai(sender, subject, snippet, body)
-                
-                email_item = {
-                    "id": msg_id,
-                    "sender": sender,
-                    "subject": subject,
-                    "date": date,
-                    "snippet": snippet,
-                    "category": ai_data["category"],
-                    "priority": ai_data["priority"],
-                    "aiSummary": ai_data["aiSummary"],
-                    "actions": ai_data["actions"]
-                }
-                
-                # Cache in MongoDB
-                if db is not None:
-                    await db.analyzed_emails.insert_one({
-                        **email_item,
-                        "user_email": current_user["email"]
-                    })
-                    
-                parsed_emails.append(email_item)
-            
         return parsed_emails
         
     except Exception as e:

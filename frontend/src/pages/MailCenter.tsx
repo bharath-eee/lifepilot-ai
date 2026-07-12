@@ -133,6 +133,11 @@ export const MailCenter: React.FC = () => {
     ? emails 
     : emails.filter(e => e.category === activeCategory);
 
+  const getCategoryCount = (category: string) => {
+    if (category === 'All') return emails.length;
+    return emails.filter(e => e.category === category).length;
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Page Title Header */}
@@ -158,19 +163,29 @@ export const MailCenter: React.FC = () => {
           <Filter className="w-3.5 h-3.5 mr-1" />
           FILTER:
         </span>
-        {categories.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-              activeCategory === cat 
-                ? 'bg-neonBlue text-white font-bold shadow-sm' 
-                : 'text-slate-600 hover:text-slate-900 bg-slate-50 border border-glassBorder'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
+        {categories.map(cat => {
+          const count = getCategoryCount(cat);
+          return (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                activeCategory === cat 
+                  ? 'bg-neonBlue text-white font-bold shadow-sm' 
+                  : 'text-slate-600 hover:text-slate-900 bg-slate-50 border border-glassBorder'
+              }`}
+            >
+              <span>{cat}</span>
+              <span className={`px-1.5 py-0.5 text-[10px] font-mono rounded-full ${
+                activeCategory === cat
+                  ? 'bg-white/20 text-white'
+                  : 'bg-slate-100 border border-glassBorder text-slate-600'
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Main Mail Grid */}

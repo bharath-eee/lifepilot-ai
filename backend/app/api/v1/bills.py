@@ -106,6 +106,24 @@ async def pay_bill(bill_id: str, current_user: dict = Depends(get_current_user))
         invoiceNumber=bill["invoiceNumber"]
     )
 
+@router.delete("/{bill_id}")
+async def delete_bill(bill_id: str, current_user: dict = Depends(get_current_user)):
+    db = get_database()
+    if db is None:
+        raise HTTPException(status_code=500, detail="Database unconnected")
+        
+    from bson import ObjectId
+    try:
+        oid = ObjectId(bill_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid bill ID format")
+        
+    result = await db.bills.delete_one({"_id": oid, "email": current_user["email"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Bill not found")
+        
+    return {"success": True, "message": "Bill deleted successfully"}
+
 def fix_and_parse_json(content: str):
     content = content.strip()
     if content.startswith("```json"):

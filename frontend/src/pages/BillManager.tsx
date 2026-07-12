@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Receipt, Upload, Sparkles, FileText, AlertCircle } from 'lucide-react';
+import { Receipt, Upload, Sparkles, FileText, AlertCircle, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
 
@@ -123,6 +123,23 @@ export const BillManager: React.FC = () => {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this bill?")) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/bills/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        setBills(bills.filter(b => b.id !== id));
+      }
+    } catch (err) {
+      console.error("Failed to delete bill", err);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -234,11 +251,18 @@ export const BillManager: React.FC = () => {
                     ) : (
                       <button 
                         onClick={() => handlePay(bill.id)}
-                        className="text-xs text-white bg-neonBlue hover:bg-neonBlue/90 px-3.5 py-2 rounded-lg font-semibold transition-all shadow-sm"
+                        className="text-xs text-white bg-neonBlue hover:bg-neonBlue/90 px-3.5 py-2 rounded-lg font-semibold transition-all shadow-sm cursor-pointer"
                       >
                         Pay Bill
                       </button>
                     )}
+                    <button 
+                      onClick={() => handleDelete(bill.id)}
+                      className="p-2 text-slate-400 hover:text-critical hover:bg-critical/10 rounded-lg transition-all cursor-pointer"
+                      title="Delete Bill"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               ))
